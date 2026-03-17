@@ -88,6 +88,35 @@ font-weight:600;
 
 <body class="bg-gray-100 relative">
 
+<div id="client-lock" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+
+  <div class="bg-white p-6 rounded-xl text-center w-80">
+    <h2 class="text-xl font-bold mb-4">Soukromý rezervační systém</h2>
+
+    <input
+      type="password"
+      id="client-password"
+      placeholder="Zadejte PIN"
+      maxlength="4"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      class="w-full border p-2 rounded mb-3 text-center text-xl tracking-widest"
+    />
+
+    <button
+      id="client-login-btn"
+      class="w-full bg-black text-white p-2 rounded"
+    >
+      Vstoupit
+    </button>
+
+    <p id="client-error" class="text-red-500 mt-2 hidden">
+      Špatné heslo
+    </p>
+  </div>
+
+</div>
+
 <!-- BARBER POLES -->
 
 <div class="barber-side barber-left">

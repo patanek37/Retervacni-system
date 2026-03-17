@@ -494,3 +494,31 @@ console.error("Chyba při admin loginu",err);
 });
 
 });
+/* =========================
+   CLIENT LOCK
+========================= */
+
+const CLIENT_PASSWORD = "6969"; // ← změň!
+
+const lock = document.getElementById("client-lock");
+const input = document.getElementById("client-password");
+const btn = document.getElementById("client-login-btn");
+const error = document.getElementById("client-error");
+
+btn.addEventListener("click", () => {
+
+    if(input.value === CLIENT_PASSWORD){
+
+        lock.style.display = "none";
+        sessionStorage.setItem("client_access", "true");
+
+    } else {
+        error.classList.remove("hidden");
+    }
+
+});
+
+// pokud už byl přihlášen
+if(sessionStorage.getItem("client_access") === "true"){
+    lock.style.display = "none";
+}
