@@ -154,5 +154,5 @@ res.json({updated:true});
 
 // --- Spuštění serveru ---
 app.listen(3000, () => {
-    console.log("Server běží na http://localhost:3000");
+    console.log("Server běží");
 });
