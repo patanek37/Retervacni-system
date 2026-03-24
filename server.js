@@ -36,6 +36,17 @@ async function initDB(){
             password TEXT
         )
     `);
+
+    // 🔥 NOVÁ TABULKA (availability)
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS availability (
+            id SERIAL PRIMARY KEY,
+            date TEXT,
+            time TEXT,
+            is_available BOOLEAN DEFAULT true,
+            UNIQUE (date, time)
+        )
+    `);
 }
 
 initDB();
@@ -88,6 +99,16 @@ app.get("/reservations", async (req, res) => {
 app.post("/reservations", async (req, res) => {
     try{
         const { name, service, date, time, duration } = req.body;
+
+        // 🔥 kontrola availability (nové)
+        const availabilityCheck = await pool.query(
+            "SELECT * FROM availability WHERE date=$1 AND time=$2 AND is_available=false",
+            [date, time]
+        );
+
+        if(availabilityCheck.rows.length > 0){
+            return res.status(400).json({ message: "Tento čas není dostupný" });
+        }
 
         // kontrola duplicity
         const check = await pool.query(
@@ -155,9 +176,82 @@ app.put("/reservations/:id", async (req, res) => {
     }
 });
 
+/* =========================
+   🔥 AVAILABILITY ENDPOINTY
+========================= */
+
+// uložit dostupnost
+app.post("/availability", async (req, res) => {
+    try{
+        const token = req.headers["x-admin-token"];
+
+        if(!token || !adminTokens[token]){
+            return res.status(401).json({ error: "Pouze admin" });
+        }
+
+        const { date, time, is_available } = req.body;
+
+        await pool.query(
+            `INSERT INTO availability(date,time,is_available)
+             VALUES($1,$2,$3)
+             ON CONFLICT (date,time)
+             DO UPDATE SET is_available=$3`,
+            [date, time, is_available]
+        );
+
+        res.json({ success:true });
+
+    }catch(err){
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== AVAILABILITY =====
+
+// GET
+app.get("/availability", async (req, res) => {
+    const result = await pool.query("SELECT * FROM availability");
+    res.json(result.rows);
+});
+
+// POST (admin only)
+app.post("/availability", async (req, res) => {
+    const token = req.headers["x-admin-token"];
+
+    if(!token || !adminTokens[token]){
+        return res.status(401).json({ error: "Pouze admin" });
+    }
+
+    const { date, time, is_available } = req.body;
+
+    await pool.query(
+        "INSERT INTO availability(date, time, is_available) VALUES($1,$2,$3)",
+        [date, time, is_available]
+    );
+
+    res.json({ success: true });
+});
+
 // --- PORT ---
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log("Server běží na portu " + PORT);
+});
+
+// DELETE availability
+app.delete("/availability/:id", async (req, res) => {
+
+    const token = req.headers["x-admin-token"];
+
+    if(!token || !adminTokens[token]){
+        return res.status(401).json({ error: "Pouze admin" });
+    }
+
+    await pool.query(
+        "DELETE FROM availability WHERE id=$1",
+        [req.params.id]
+    );
+
+    res.json({ deleted: true });
 });

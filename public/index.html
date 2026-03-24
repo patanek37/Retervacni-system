@@ -82,7 +82,22 @@ font-weight:600;
 background:#f3f4f6;
 font-weight:600;
 }
+/* 🔴 BLOKOVANÉ ČASY */
+.fc-event.blocked {
+    background: #ef4444 !important;
+    color: white !important;
+    border: none !important;
+}
 
+/* 🟡 hover efekt pro admina */
+.fc-event.blocked:hover {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+/* jemné zvýraznění slotu při hoveru */
+.fc-timegrid-slot:hover {
+    background: rgba(0,0,0,0.03);
+}
 </style>
 </head>
 

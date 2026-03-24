@@ -181,6 +181,68 @@ month:"Měsíc"
 
 dateClick:function(info){
 
+if(window.isAdmin && window.adminToken){
+
+const date = info.dateStr.split("T")[0];
+const time = info.dateStr.split("T")[1].substring(0,5);
+
+// 🔥 nejdřív zjistíme jestli už existuje blok
+fetch("/availability")
+.then(res => res.json())
+.then(data => {
+
+const existing = data.find(a =>
+    a.date === date &&
+    a.time === time &&
+    a.is_available === false
+);
+
+if(existing){
+
+// ❌ ODLOKOVÁNÍ (DELETE)
+if(confirm("Odblokovat tento čas?")){
+
+fetch("/availability/"+existing.id,{
+method:"DELETE",
+headers:{
+"x-admin-token":window.adminToken
+}
+}).then(()=>{
+calendar.refetchEvents();
+updateBlockedTimes();
+});
+
+}
+
+}else{
+
+// 🔒 BLOKOVÁNÍ
+if(confirm("Zablokovat tento čas?")){
+
+fetch("/availability",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"x-admin-token":window.adminToken
+},
+body:JSON.stringify({
+date:date,
+time:time,
+is_available:false
+})
+}).then(()=>{
+calendar.refetchEvents();
+updateBlockedTimes();
+});
+
+}
+
+}
+
+});
+
+return;
+}
 const clickedDate = info.date;
 
 // datum
@@ -232,6 +294,8 @@ try{
 
 const res=await fetch("/reservations");
 const data=await res.json();
+const availabilityRes = await fetch("/availability");
+const availability = await availabilityRes.json();
 
 const events=data.map(r=>{
 
@@ -259,7 +323,27 @@ className:className
 
 }).filter(e=>e!==null);
 
-successCallback(events);
+const blockedEvents = availability
+.filter(a => a.is_available === false)
+.map(a => {
+
+const [year,month,day]=a.date.split("-").map(Number);
+const [hour,minute]=a.time.split(":").map(Number);
+
+const start=new Date(year,month-1,day,hour,minute);
+const end=new Date(start.getTime()+30*60000);
+
+return{
+id:a.id,
+title:"ZAVŘENO",
+start:start.toISOString(),
+end:end.toISOString(),
+className:"blocked"
+};
+
+});
+
+successCallback([...events, ...blockedEvents]);
 
 }catch(err){
 
@@ -270,6 +354,29 @@ console.error("Chyba při načítání kalendáře",err);
 },
 
 eventClick:async function(info){
+
+if(info.event.title === "ZAVŘENO"){
+
+if(window.isAdmin && window.adminToken){
+
+if(confirm("Odblokovat tento čas?")){
+
+fetch("/availability/"+info.event.id,{
+method:"DELETE",
+headers:{
+"x-admin-token":window.adminToken
+}
+}).then(()=>{
+calendar.refetchEvents();
+updateBlockedTimes();
+});
+
+}
+
+}
+
+return;
+}
 
 if(window.isAdmin && window.adminToken){
 
