@@ -37,21 +37,31 @@ toast.classList.add("hidden");
 function generateWorkingHours(){
 
 const timeSelect = document.getElementById("time");
-
 timeSelect.innerHTML="";
 
-for(let hour=8; hour<=17; hour++){
+for(let hour=8; hour<17; hour++){
 
-const formatted = hour.toString().padStart(2,"0")+":00";
+    ["00","30"].forEach(minute=>{
 
-const option=document.createElement("option");
+        const formatted =
+            String(hour).padStart(2,"0") + ":" + minute;
 
-option.value=formatted;
-option.textContent=formatted;
+        const option = document.createElement("option");
 
-timeSelect.appendChild(option);
+        option.value = formatted;
+        option.textContent = formatted;
+
+        timeSelect.appendChild(option);
+
+    });
 
 }
+
+// poslední čas
+const last = document.createElement("option");
+last.value = "17:00";
+last.textContent = "17:00";
+timeSelect.appendChild(last);
 
 }
 
@@ -139,17 +149,18 @@ calendar=new FullCalendar.Calendar(calendarEl,{
 
 initialView:"timeGridWeek",
 slotMinTime:"08:00:00",
-slotMaxTime:"18:00:00",
+slotMaxTime:"17:00:00",
 
 height:"auto",
 contentHeight:600,
 
-slotDuration:"01:00:00",
-slotLabelInterval:"01:00",
+slotDuration:"00:30:00",
+slotLabelInterval:"00:30",
+snapDuration:"00:30:00",
 slotLabelFormat:{hour:"2-digit",minute:"2-digit",hour12:false},
 allDaySlot:false,
 locale:"cs",
-timeZone:"Europe/Prague",
+timeZone:"local",
 
 selectable:true,
 
@@ -172,22 +183,45 @@ dateClick:function(info){
 
 const clickedDate = info.date;
 
+// datum
 const year = clickedDate.getFullYear();
 const month = String(clickedDate.getMonth()+1).padStart(2,"0");
 const day = String(clickedDate.getDate()).padStart(2,"0");
 
-const hour = info.dateStr.split("T")[1].substring(0,5);
+// čas (BEZ POSUNU)
+let hours = clickedDate.getHours();
+let minutes = clickedDate.getMinutes();
 
+// ZAOKROUHLENÍ NA 30 MIN
+if(minutes < 30){
+    minutes = "00";
+}else{
+    minutes = "30";
+}
+
+const formattedTime =
+    String(hours).padStart(2,"0") + ":" + minutes;
+
+// nastav do formuláře
 document.getElementById("date").value = `${year}-${month}-${day}`;
 
 updateBlockedTimes();
 
 setTimeout(()=>{
-document.getElementById("time").value = hour;
+    const select = document.getElementById("time");
+
+    // fallback – když by tam náhodou nebylo
+    if(select.querySelector(`option[value="${formattedTime}"]`)){
+        select.value = formattedTime;
+    } else {
+        console.log("Čas nenalezen:", formattedTime);
+    }
+
 },100);
 
+// scroll
 document.getElementById("bookingForm").scrollIntoView({
-behavior:"smooth"
+    behavior:"smooth"
 });
 
 },
