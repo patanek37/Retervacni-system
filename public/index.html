@@ -11,92 +11,126 @@
 
 <style>
 
-/* BARVY REZERVACÍ */
+/* ===== BARVY REZERVACÍ ===== */
 
-.fc-event.střih{background:#34d399!important}
-.fc-event.vousy{background:#a78bfa!important}
-.fc-event.strih-vousy{background:#60a5fa!important}
+.fc-event.střih { background:#34d399!important }
+.fc-event.vousy { background:#a78bfa!important }
+.fc-event.strih-vousy { background:#60a5fa!important }
 
-/* VÝBĚR SLUŽBY */
+/* ===== VÝBĚR SLUŽBY ===== */
 
-.service-střih{border-color:#34d399!important;background:#d1fae5}
-.service-vousy{border-color:#a78bfa!important;background:#ede9fe}
-.service-strih-vousy{border-color:#60a5fa!important;background:#dbeafe}
+.service-střih { border-color:#34d399!important; background:#d1fae5 }
+.service-vousy { border-color:#a78bfa!important; background:#ede9fe }
+.service-strih-vousy { border-color:#60a5fa!important; background:#dbeafe }
 
-/* BARBER POLE */
+/* ===== BARBER POLE ===== */
 
 .barber-side{
-position:fixed;
-top:0;
-height:100vh;
-width:120px;
-overflow:hidden;
-pointer-events:none;
-z-index:5;
-opacity:.35;
+    position:fixed;
+    top:0;
+    height:100vh;
+    width:120px;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:5;
+    opacity:.35;
 }
 
 .barber-left{left:0}
 .barber-right{right:0}
 
 .barber-pattern{
-width:100%;
-height:200%;
-background:repeating-linear-gradient(
-45deg,
-#e11d48 0px,
-#e11d48 40px,
-white 40px,
-white 80px,
-#2563eb 80px,
-#2563eb 120px,
-white 120px,
-white 160px
-);
-animation:barberMove 6s linear infinite;
+    width:100%;
+    height:200%;
+    background:repeating-linear-gradient(
+        45deg,
+        #e11d48 0px,
+        #e11d48 40px,
+        white 40px,
+        white 80px,
+        #2563eb 80px,
+        #2563eb 120px,
+        white 120px,
+        white 160px
+    );
+    animation:barberMove 6s linear infinite;
 }
 
 @keyframes barberMove{
-0%{transform:translateY(0)}
-100%{transform:translateY(-160px)}
+    0%{transform:translateY(0)}
+    100%{transform:translateY(-160px)}
 }
 
-/* MOBIL */
+/* ===== MOBIL ===== */
 
 @media(max-width:1000px){
-.barber-side{display:none}
+    .barber-side{display:none}
 }
 
+/* ===== KALENDÁŘ ===== */
+
 .fc-timegrid-slot {
-height: 30px !important;
+    height: 30px !important;
 }
 
 .fc-timegrid-slot-label {
-font-size: 13px;
+    font-size: 13px;
 }
+
 .fc-timegrid-axis {
-font-weight:600;
+    font-weight:600;
 }
 
 .fc-col-header-cell {
-background:#f3f4f6;
-font-weight:600;
-}
-/* 🔴 BLOKOVANÉ ČASY */
-.fc-event.blocked {
-    background: #ef4444 !important;
-    color: white !important;
-    border: none !important;
+    background:#f3f4f6;
+    font-weight:600;
 }
 
-/* 🟡 hover efekt pro admina */
-.fc-event.blocked:hover {
-    opacity: 0.8;
-    cursor: not-allowed;
-}
-/* jemné zvýraznění slotu při hoveru */
+/* ===== HOVER SLOT ===== */
+
 .fc-timegrid-slot:hover {
     background: rgba(0,0,0,0.03);
+}
+
+/* ===== BLOKOVANÉ ČASY ===== */
+
+.fc-event.blocked {
+    background:#ef4444!important;
+    color:white!important;
+    border:none!important;
+    font-size:11px!important;
+    font-weight:bold;
+}
+
+/* ===== EVENT LAYOUT (HLAVNÍ FIX) ===== */
+
+.fc-timegrid-event {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+}
+
+.fc-event-main {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    width:100%;
+}
+
+/* ===== SKRYTÍ ČASU ===== */
+
+.fc-event-time {
+    display:none!important;
+}
+
+/* ===== TEXT ===== */
+
+.fc-event-title {
+    white-space:normal!important;
+    line-height:1.2;
+    font-size:13px;
+    font-weight:600;
 }
 </style>
 </head>

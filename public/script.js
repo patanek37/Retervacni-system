@@ -418,10 +418,10 @@ e.preventDefault();
 
 const service=document.querySelector('input[name="service"]:checked').value;
 
-let duration=60;
+let duration=30;
 
-if(service==="Vousy") duration=45;
-if(service==="Střih + vousy") duration=90;
+if(service==="Vousy") duration=30;
+if(service==="Střih + vousy") duration=60;
 
 const reservation={
 name:document.getElementById("name").value,
