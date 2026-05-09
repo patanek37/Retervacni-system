@@ -39,7 +39,7 @@ function generateWorkingHours(){
 const timeSelect = document.getElementById("time");
 timeSelect.innerHTML="";
 
-for(let hour=8; hour<17; hour++){
+for(let hour=10; hour<17; hour++){
 
     ["00","30"].forEach(minute=>{
 
@@ -57,12 +57,17 @@ for(let hour=8; hour<17; hour++){
 
 }
 
-// poslední čas
-const last = document.createElement("option");
-last.value = "17:00";
-last.textContent = "17:00";
-timeSelect.appendChild(last);
+// poslední časy
+["17:00","17:30"].forEach(time => {
 
+    const option = document.createElement("option");
+
+    option.value = time;
+    option.textContent = time;
+
+    timeSelect.appendChild(option);
+
+   });
 }
 
 /* =========================
@@ -148,8 +153,8 @@ const calendarEl=document.getElementById("calendar");
 calendar=new FullCalendar.Calendar(calendarEl,{
 
 initialView:"timeGridWeek",
-slotMinTime:"08:00:00",
-slotMaxTime:"17:00:00",
+slotMinTime:"10:00:00",
+slotMaxTime:"18:00:00",
 
 height:"auto",
 contentHeight:600,
@@ -158,16 +163,17 @@ slotDuration:"00:30:00",
 slotLabelInterval:"00:30",
 snapDuration:"00:30:00",
 slotLabelFormat:{hour:"2-digit",minute:"2-digit",hour12:false},
-allDaySlot:false,
+allDaySlot:true,
 locale:"cs",
 timeZone:"local",
 
 selectable:true,
+navLinks:true,
 
 headerToolbar:{
 left:"prev,next today",
 center:"title",
-right:"timeGridDay,timeGridWeek,dayGridMonth"
+right:"timeGridDay,timeGridWeek,"
 },
 
 buttonText:{
@@ -176,10 +182,214 @@ week:"Týden",
 day:"Den",
 month:"Měsíc"
 },
+datesSet:function(){
+    calendar.refetchEvents();
+},
 
 /* ===== KLIK NA KALENDÁŘ ===== */
 
 dateClick:function(info){
+
+// 📅 MONTH VIEW ADMIN
+if(
+window.isAdmin &&
+window.adminToken &&
+info.view.type === "dayGridMonth"
+){
+
+const date = info.dateStr;
+
+fetch("/availability")
+.then(res => res.json())
+.then(data => {
+
+const dayBlocks = data.filter(a =>
+    a.date === date &&
+    a.is_available === false
+);
+
+// otevřít
+if(dayBlocks.length >= 17){
+
+if(confirm("Otevřít celý den?")){
+
+Promise.all(
+
+dayBlocks.map(block =>
+
+fetch("/availability/"+block.id,{
+method:"DELETE",
+headers:{
+"x-admin-token":window.adminToken
+}
+})
+
+)
+
+).then(()=>{
+
+calendar.refetchEvents();
+
+});
+
+}
+
+}else{
+
+// zavřít
+if(confirm("Zavřít celý den?")){
+
+const times = [];
+
+for(let hour=10; hour<17; hour++){
+
+times.push(`${String(hour).padStart(2,"0")}:00`);
+times.push(`${String(hour).padStart(2,"0")}:30`);
+
+}
+
+times.push("17:00");
+times.push("17:30");
+
+Promise.all(
+
+times.map(time =>
+
+fetch("/availability",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"x-admin-token":window.adminToken
+},
+body:JSON.stringify({
+date:date,
+time:time,
+is_available:false
+})
+})
+
+)
+
+).then(()=>{
+
+calendar.refetchEvents();
+
+});
+
+}
+
+}
+
+});
+
+return;
+}
+
+// 👤 USER nesmí klikat na allDay řádek
+if(
+!window.isAdmin &&
+info.allDay
+){
+return;
+}
+// 🔥 ADMIN — CELÝ DEN (mobil friendly)
+if(
+window.isAdmin &&
+window.adminToken &&
+info.allDay
+){
+
+const date = info.dateStr;
+
+fetch("/availability")
+.then(res => res.json())
+.then(data => {
+
+const dayBlocks = data.filter(a =>
+    a.date === date &&
+    a.is_available === false
+);
+
+// 🔓 OTEVŘÍT DEN
+if(dayBlocks.length >= 17){
+
+if(confirm("Otevřít celý den?")){
+
+Promise.all(
+
+dayBlocks.map(block =>
+
+fetch("/availability/"+block.id,{
+method:"DELETE",
+headers:{
+"x-admin-token":window.adminToken
+}
+})
+
+)
+
+).then(()=>{
+
+calendar.refetchEvents();
+updateBlockedTimes();
+
+});
+
+}
+
+}else{
+
+// 🔒 ZAVŘÍT DEN
+if(confirm("Zavřít celý den?")){
+
+const times = [];
+
+for(let hour=10; hour<17; hour++){
+
+times.push(`${String(hour).padStart(2,"0")}:00`);
+times.push(`${String(hour).padStart(2,"0")}:30`);
+
+}
+
+times.push("17:00");
+times.push("17:30");
+
+Promise.all(
+
+times.map(time =>
+
+fetch("/availability",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"x-admin-token":window.adminToken
+},
+body:JSON.stringify({
+date:date,
+time:time,
+is_available:false
+})
+})
+
+)
+
+).then(()=>{
+
+calendar.refetchEvents();
+updateBlockedTimes();
+
+});
+
+}
+
+}
+
+});
+
+return;
+}
+
+
 
 if(window.isAdmin && window.adminToken){
 
@@ -323,8 +533,44 @@ className:className
 
 }).filter(e=>e!==null);
 
+const groupedDays = {};
+
+// spočítáme blokace podle dne
+availability.forEach(a => {
+
+if(a.is_available === false){
+
+    if(!groupedDays[a.date]){
+        groupedDays[a.date] = 0;
+    }
+
+    groupedDays[a.date]++;
+
+}
+
+});
+
+// 🔴 jednotlivé blokované sloty
 const blockedEvents = availability
-.filter(a => a.is_available === false)
+.filter(a => {
+
+if(a.is_available !== false){
+    return false;
+}
+
+// month view = nezobrazuj sloty
+if(calendar.view.type === "dayGridMonth"){
+    return false;
+}
+
+// celý den zavřený
+if(groupedDays[a.date] >= 17){
+    return false;
+}
+
+return true;
+
+})
 .map(a => {
 
 const [year,month,day]=a.date.split("-").map(Number);
@@ -343,7 +589,36 @@ className:"blocked"
 
 });
 
-successCallback([...events, ...blockedEvents]);
+// 🟥 celé zavřené dny
+const fullDayBlocks = [];
+
+Object.keys(groupedDays).forEach(date => {
+
+if(groupedDays[date] >= 17){
+
+const nextDay = new Date(date);
+nextDay.setDate(nextDay.getDate() + 1);
+
+fullDayBlocks.push({
+    id:"full-"+date,
+    title:"ZAVŘENO",
+    start: date,
+    end: nextDay.toISOString().split("T")[0],
+    allDay:true,
+    display:"auto",
+    className:"blocked-full"
+});
+
+}
+
+});
+
+// render
+successCallback([
+...events,
+...blockedEvents,
+...fullDayBlocks
+]);
 
 }catch(err){
 
@@ -354,6 +629,49 @@ console.error("Chyba při načítání kalendáře",err);
 },
 
 eventClick:async function(info){
+
+// 📅 celý zavřený den
+if(info.event.classNames.includes("blocked-full")){
+
+if(window.isAdmin && window.adminToken){
+
+const clickedDate =
+info.event.start.toISOString().split("T")[0];
+
+const res = await fetch("/availability");
+const data = await res.json();
+
+const dayBlocks = data.filter(a =>
+a.date === clickedDate &&
+a.is_available === false
+);
+
+if(confirm("Otevřít celý den?")){
+
+await Promise.all(
+
+dayBlocks.map(block =>
+
+fetch("/availability/"+block.id,{
+method:"DELETE",
+headers:{
+"x-admin-token":window.adminToken
+}
+})
+
+)
+
+);
+
+calendar.refetchEvents();
+updateBlockedTimes();
+
+}
+
+}
+
+return;
+}
 
 if(info.event.title === "ZAVŘENO"){
 
@@ -611,6 +929,15 @@ const data=await res.json();
 
 window.isAdmin=true;
 window.adminToken=data.token;
+
+calendar.setOption(
+"headerToolbar",
+{
+left:"prev,next today",
+center:"title",
+right:"timeGridDay,timeGridWeek,dayGridMonth"
+}
+);
 
 document.getElementById("admin-panel").classList.remove("hidden");
 
