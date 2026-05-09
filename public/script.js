@@ -94,6 +94,7 @@ const takenTimes=reservations
 
 Array.from(timeSelect.options).forEach(option=>{
 
+
 if(takenTimes.includes(option.value)){
 option.disabled=true;
 option.textContent=option.value+" (obsazeno)";
@@ -110,6 +111,31 @@ console.error("Chyba při načítání rezervací",err);
 }
 
 document.getElementById("date").addEventListener("change",updateBlockedTimes);
+document.getElementById("time").addEventListener("change",()=>{
+
+const selectedTime =
+document.getElementById("time").value;
+
+const comboService = document.querySelector(
+'input[value="Střih + vousy"]'
+);
+
+if(
+selectedTime === "17:30" &&
+comboService.checked
+){
+
+alert("V 17:30 nelze rezervovat Střih + vousy");
+
+document.querySelector(
+'input[value="Střih"]'
+).checked = true;
+
+updateServiceHighlight();
+
+}
+
+});
 
 /* =========================
    ZVÝRAZNĚNÍ SLUŽBY
@@ -142,6 +168,28 @@ updateServiceHighlight();
 serviceLabels.forEach(label=>{
 const input=label.querySelector('input[name="service"]');
 input.addEventListener("change",updateServiceHighlight);
+input.addEventListener("change",()=>{
+
+const selectedTime =
+document.getElementById("time").value;
+
+if(
+selectedTime === "17:30" &&
+input.value === "Střih + vousy" &&
+input.checked
+){
+
+alert("V 17:30 nelze rezervovat Střih + vousy");
+
+document.querySelector(
+'input[value="Střih"]'
+).checked = true;
+
+updateServiceHighlight();
+
+}
+
+});
 });
 
 /* =========================
@@ -735,6 +783,20 @@ form.addEventListener("submit",async function(e){
 e.preventDefault();
 
 const service=document.querySelector('input[name="service"]:checked').value;
+
+// ❌ zákaz kombinace v 17:30
+const selectedTime =
+document.getElementById("time").value;
+
+if(
+selectedTime === "17:30" &&
+service === "Střih + vousy"
+){
+
+alert("V 17:30 nelze rezervovat Střih + vousy");
+return;
+
+}
 
 let duration=30;
 
